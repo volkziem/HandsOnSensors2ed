@@ -1,0 +1,9 @@
+# ./wgsApp/Db/geophone.proto
+Terminator = CR LF;
+get_wf {
+   ExtraInput = Ignore;
+   replyTimeout=2000;
+   out "WF?";
+   separator=",";
+   in "%f";
+}

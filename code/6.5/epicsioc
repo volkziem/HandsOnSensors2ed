@@ -1,0 +1,39 @@
+#! /bin/sh
+# /etc/init.d/epicsioc
+
+### BEGIN INIT INFO
+# Provides:          empicsioc
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Simple script to start a program at boot
+# Description:       Start and stop epicsioc server
+### END INIT INFO
+
+# If you want a command to always run, put it here
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+    echo "Starting epicsioc"
+    . /home/pi/.bash_aliases
+    cd /home/pi/epics/ioc/temp/iocBoot/ioctemp
+    /usr/bin/procServ -n "IOC" -L /tmp/epics.log -i ^D^C 20000 ./st.cmd
+    ;;
+  stop)
+    echo "Stopping epicsioc"
+    kill $(pidof procServ)
+    ;;
+  restart)
+      $0 stop
+      sleep 10
+      $0 start
+      ;;
+  *)
+    echo "Usage: /etc/init.d/epicsioc {start|stop|restart}"
+    exit 1
+    ;;
+esac
+
+exit 0 

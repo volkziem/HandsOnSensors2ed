@@ -1,0 +1,8 @@
+# ./tempApp/Db/temperature.proto
+Terminator = CR LF;
+get_temp {
+   out "T?";
+   in  "T %f";
+   ExtraInput = Ignore;
+}
+

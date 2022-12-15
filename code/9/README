@@ -1,0 +1,6 @@
+The Makefile contains the rrdtool commands to create
+the rrdtool database and to create a plot
+
+     make weather
+ 
+creates the database 

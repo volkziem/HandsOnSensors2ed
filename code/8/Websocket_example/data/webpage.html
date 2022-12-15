@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<HTML lang="en">
+<HEAD>
+  <TITLE>Temperature server</TITLE>
+  <META charset="UTF-8">
+  <STYLE>
+    #displayarea {border: 1px solid black; }
+    #trace0 {fill: none; stroke: red; stroke-width: 1px;}
+    #ip {float: right;}
+  </STYLE>
+</HEAD>
+<BODY>
+<P> Temperature server:
+    <BUTTON id="start" type="button" onclick="start();">Start</BUTTON>   
+    <BUTTON id="stop" type="button" onclick="stop();">Stop</BUTTON>
+    <SELECT onchange="setSamplePeriod(this.value);">
+      <OPTION selected="selected" value="1">1 s</OPTION>
+      <OPTION value="2">2 s</OPTION>
+      <OPTION value="5">5 s</OPTION>
+    </SELECT>
+    <A id='ip'>IP address</A>
+     <BUTTON id="clear" type="button" onclick="cleardisplay();">Clear</BUTTON>
+</P>
+
+<DETAILS open>
+  <SUMMARY>Logging display</SUMMARY>
+  <SVG id="displayarea" width="1024px" height="512px">
+    <PATH id="trace0" d="M0 256" />
+  </SVG>
+</DETAILS>
+
+<div id="status">Status window</div>
+<script>
+  var ipaddr=location.hostname + ":81";
+  var sample_period=1, current_position=0;
+  var Tmin=10,Tmax=40;
+  var getQueryString= function(field) {
+    var reg = new RegExp("[?&]" + field + "=([^&#]*)", "i");
+    var string=reg.exec(window.location.href);
+    return string ? string[1] : null;
+  };
+  is_ip=getQueryString("ip");  // check whether address is in query string
+  if (is_ip != null) {ipaddr=is_ip;}
+  document.getElementById('ip').innerHTML=ipaddr;
+  var websock = new WebSocket('ws://' + ipaddr);
+  websock.onerror = function(evt) { console.log(evt); toStatus(evt) };
+  websock.onopen = function(evt) {console.log('websock open'); };
+  websock.onclose = function(evt) {
+    console.log('websock close');
+    toStatus('websock close');
+  };
+  websock.onmessage=function(event) {
+    console.log(event);
+    var stuff=JSON.parse(event.data);
+    var val=stuff["INFO"]; //..............................info
+    if ( val != undefined ) {toStatus(val);}
+    val=stuff["TEMP"];      //......................temperature
+    if ( val != undefined ) {
+      dd=document.getElementById('trace0').getAttribute('d');
+      dd += ' L' + current_position + ' ' + (512-512*(val-Tmin)/(Tmax-Tmin));
+      document.getElementById('trace0').setAttribute('d',dd);
+      current_position += 1;
+      toStatus('T = ' + val);
+      if (current_position > 1024) {
+        console.log(document.getElementById('trace0').getAttribute('d'));
+        dd=document.getElementById('trace0').getAttribute('d').replace(/M[^L]*L/, "M");
+        document.getElementById('trace0').setAttribute('d',dd); 
+        document.getElementById('trace0').setAttribute('transform','translate(' + (1024-current_position) + ',0)');
+      }
+    }
+  }
+//.............................................toStatus  
+  function toStatus(txt) {document.getElementById('status').innerHTML=txt; }
+//.............................................start
+  function start() {
+    websock.send(JSON.stringify({ "cmd" : "START", "val" : sample_period }));
+  }   
+  //.............................................stop acquisition
+  function stop() {
+    websock.send(JSON.stringify({ "cmd" : "STOP", "val" : "-1" }));
+  }	
+//...............................................setSamplePeriod
+  function setSamplePeriod(v) {
+    toStatus("Setting sample period to "+ v + " s");
+    sample_period=v;
+  } 
+//..................................................cleardisplay
+  function cleardisplay() {
+    dd = "M0 256"; 
+    document.getElementById('trace0').setAttribute('d',dd);
+    document.getElementById('trace0').setAttribute('transform','translate(0)');
+    current_position=0;
+    toStatus("Display cleared");
+  }
+</script>
+</body>
+</HTML>  

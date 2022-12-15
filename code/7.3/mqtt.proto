@@ -1,0 +1,7 @@
+# ./tempApp/Db/mqtt.proto
+Terminator = CR LF;
+set_fan {out "node1/fan %i";}
+subscribe {out "SUBSCRIBE %s";}
+unsubscribe {out "UNSUBSCRIBE %s";}
+get_temp {in "node1/temp %f";}
+

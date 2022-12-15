@@ -1,0 +1,22 @@
+# ./tempApp/Db/mqtt.db
+record(ao, "node1/fan") {
+   field(DESC, "Fan on NodeMCU")
+   field(DTYP, "stream")
+   field(OUT, "@mqtt.proto set_fan $(PORT)")
+}
+record(stringout, "SUBSCRIBE") {
+   field(DESC, "Write to dummy variable")
+   field(DTYP, "stream")
+   field(OUT, "@mqtt.proto subscribe $(PORT)")
+}
+record(stringout, "UNSUBSCRIBE") {
+   field(DESC, "Write to dummy variable")
+   field(DTYP, "stream")
+   field(OUT, "@mqtt.proto unsubscribe $(PORT)")
+}
+record(ai, "node1/temp") {
+   field(DESC, "Temperature on node1")
+   field(DTYP, "stream")
+   field(INP, "@mqtt.proto get_temp $(PORT)")
+   field(SCAN,"I/O Intr")
+}

@@ -1,0 +1,5 @@
+The RRDtool commands are in the Makefile
+
+  "make db1"    creates the db1.rrd database
+  "make graph1" creaes db1.png
+  

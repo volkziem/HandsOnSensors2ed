@@ -1,0 +1,218 @@
+<!DOCTYPE HTML>
+<HTML lang="en">
+<HEAD>
+  <TITLE>ESP-DAQ</TITLE>
+  <META charset="UTF-8">
+  <STYLE>
+    #displayarea { border: 1px solid black; }
+    #adc32 { border: 1px solid black; }
+    #adc33 { border: 1px solid black; }
+    #trace0 { fill: none; stroke: red; stroke-width: 1px;}
+    #trace1 { fill: none; stroke: blue; stroke-width: 1px;}
+    #ip {float: right;}
+  </STYLE>
+</HEAD>
+<BODY>
+<P> ESP-DAQ:
+    <button id="start" type="button" onclick="start();">Start</button>   
+    <button id="stop" type="button" onclick="stop();">Stop</button>
+    <SELECT onchange="setSamplePeriod(this.value);">
+      <OPTION value="5">5 ms</OPTION>
+      <OPTION value="10">10 ms</OPTION>
+      <OPTION value="20">20 ms</OPTION>
+      <OPTION value="50">50 ms</OPTION>
+      <OPTION selected="selected" value="100">100 ms</OPTION>
+      <OPTION value="200">200 ms</OPTION>
+      <OPTION value="500">500 ms</OPTION>
+      <OPTION value="1000">1 s</OPTION>
+      <OPTION value="2000">2 s</OPTION>
+      <OPTION value="5000">5 s</OPTION>
+    </SELECT>
+    <button id="clear" type="button" onclick="cleardisplay();">Clear</button>
+    <SELECT onchange="sendSpecialCommand(this.value);">
+      <OPTION value="0">ECG live</OPTION>
+      <OPTION value="3">Oximeter IR live</OPTION>
+      <OPTION value="4">Oximeter Red live</OPTION>
+      <OPTION value="5">Oximeter SPO2 live</OPTION>
+      <OPTION value="6">AD5933 Calibrate</OPTION>
+      <OPTION value="7">AD5933 Frequency sweep</OPTION>
+      <OPTION value="8">AD5933 at 50kHz</OPTION>     
+      <OPTION value="100">List directory</OPTION>
+      <OPTION value="101">Remove data file</OPTION>
+      <OPTION value="200">Recording ON</OPTION>
+      <OPTION value="201">Recording OFF</OPTION>
+      <OPTION value="202">Replay recording</OPTION>
+      <OPTION value="300">Start ECG output</OPTION>
+      <OPTION value="301">Stop ECG output</OPTION>
+      <OPTION value="999">Test something</OPTION>
+    </SELECT> 
+    <A id='ip'>IP address</A>
+</P>
+<P>
+<details open> <summary>Input output</summary> 
+<canvas id="Din" width="100" height="20"> </canvas>
+DO18: <input type="checkbox" id="DO18" onchange="setDO(18,this.checked)" />
+<SELECT onchange="pulsepin18(this.value);">
+      <OPTION value="0">Pulse D18 OFF</OPTION>
+      <OPTION value="1">Pulse D18 with 1 ms steps</OPTION>
+      <OPTION value="10">Pulse D18 with 10 ms steps</OPTION>
+      <OPTION value="100">Pulse D18 with 100 ms steps</OPTION>
+      <OPTION value="1000">Pulse D18 with 1 s steps</OPTION>
+      <OPTION value="2000">Pulse D18 with 2 s steps</OPTION>
+      <OPTION value="5000">Pulse D18 with 5 s steps</OPTION>
+</SELECT>  
+</P>
+<P>
+DAC25: <input type="range" min="0" max="255" step="1" value="0" onchange="updatedac25(this.value)" />
+<SELECT onchange="rampdac25(this.value);">
+      <OPTION value="0">Ramp DAC25 OFF</OPTION>
+      <OPTION value="10">Ramp DAC25 with 10 ms steps</OPTION>
+      <OPTION value="50">Ramp DAC25 with 50 ms steps</OPTION>
+</SELECT>  
+</P>
+<P>
+<div id="adc32val">ADC32: unknown</div> 
+<canvas id="adc32" width="512" height="10"> </canvas>
+<div id="adc33val">ADC33: unknown</div> 
+<canvas id="adc33" width="512" height="10"> </canvas>
+</details>
+</P>
+<details open>
+  <summary>Logging display</summary>
+  <svg id="displayarea" width="1024px" height="512px">
+    <path id="trace0" d="M0 256" />
+    <path id="trace1" d="M0 256" />
+  </svg>
+</details>
+
+<div id="status">Status window</div>
+<div id="reply">Reply from ESP32</div>
+<!-- ................................................................................. -->
+<SCRIPT>
+   var ipaddr=location.hostname + ":81";
+   var sample_period=100, current_position=0;
+   var getQueryString= function(field) {
+      var reg = new RegExp("[?&]" + field + "=([^&#]*)", "i");
+      var string=reg.exec(window.location.href);
+      return string ? string[1] : null;
+    };
+    iii=getQueryString("ip");  // check whether address is in query string
+    if (iii != null) {ipaddr=iii;}
+    console.log(iii);
+    document.getElementById('ip').innerHTML=ipaddr;
+    show_noconnect();
+    var websock = new WebSocket('ws://' + ipaddr);
+    websock.onerror = function(evt) { console.log(evt); toStatus(evt) };
+    websock.onopen = function(evt) { console.log('websock open'); };
+    websock.onclose = function(evt) {
+      console.log('websock close');
+      toStatus('websock close');
+    };
+    function toStatus(txt) {document.getElementById('status').innerHTML=txt; }
+    function toReply(txt) {document.getElementById('reply').innerHTML=txt; }
+    function start() {
+      websock.send(JSON.stringify({ "cmd" : "START", "val" : sample_period }));
+    }   
+    function stop() {
+      websock.send(JSON.stringify({ "cmd" : "STOP", "val" : "-1" }));
+      show_noconnect();			    
+    }
+    websock.onmessage=function(event) {
+      console.log(event);
+      var stuff=JSON.parse(event.data);
+      var val=stuff["INFO"]; //..............................info
+      if ( val != undefined ) {toReply(val);}
+      val=stuff["ADC"];      //..............................adc
+      if ( val != undefined ) {
+        document.getElementById('adc32val').innerHTML=
+          "ADC32: " + val[0] + " --> " + (val[0]*3.3/511).toFixed(2) + " V";
+        c=document.getElementById('adc32').getContext("2d"); 
+        c.clearRect(0,0,512,10);
+        c.fillStyle = "#FF0000"; c.fillRect(0,0,val[0],10);
+        document.getElementById('adc33val').innerHTML=
+          "ADC33: " + val[1] + " --> " + (val[1]*3.3/511).toFixed(2) + " V";
+        c=document.getElementById('adc33').getContext("2d"); 
+        c.clearRect(0,0,512,10);
+        c.fillStyle = "#0000FF"; c.fillRect(0,0,val[1],10);
+        c=document.getElementById('Din').getContext("2d"); 
+        if (val[2]==1) {c.fillStyle = "#00FF00";} else {c.fillStyle = "#FF0000";}
+        c.fillRect(20,0,100,20);
+        c.font = "20px Arial"; c.fillStyle = "#000000"; 
+        c.fillText("DI21",40,17); 
+        dd=document.getElementById('trace0').getAttribute('d');
+        dd += ' L' + current_position + ' ' + (512-val[0]);
+	document.getElementById('trace0').setAttribute('d',dd);
+        dd=document.getElementById('trace1').getAttribute('d');
+        dd += ' L' + current_position + ' ' + (512-val[1]);
+        document.getElementById('trace1').setAttribute('d',dd);
+        current_position += 1;
+        if (current_position > 1024) {
+          dd=document.getElementById('trace0').getAttribute('d').replace(/M[^L]*L/, "M");
+          document.getElementById('trace0').setAttribute('d',dd);
+          document.getElementById('trace0').setAttribute('transform','translate(' + (1024-current_position) + ',0)');
+          dd=document.getElementById('trace1').getAttribute('d').replace(/M[^L]*L/, "M");
+          document.getElementById('trace1').setAttribute('d',dd);
+          document.getElementById('trace1').setAttribute('transform','translate(' + (1024-current_position) + ',0)');
+       }
+      }
+    }  
+//....................................setSamplePeriod
+    function setSamplePeriod(v) {
+      toStatus("Setting sample period to "+ v + " ms");
+      sample_period=v;
+    } 
+//..................................................
+    function cleardisplay() {
+      dd = "M0 512"; 
+      document.getElementById('trace0').setAttribute('d',dd);
+      document.getElementById('trace0').setAttribute('transform','translate(0)');
+      document.getElementById('trace1').setAttribute('d',dd);
+      document.getElementById('trace1').setAttribute('transform','translate(0)');
+      current_position=0;
+    }
+//..................................................
+    function show_noconnect() {
+      c=document.getElementById('Din').getContext("2d"); 
+      c.fillStyle = "#DDDDDD"
+      for (i=2;i<3;i++) {c.fillRect(20+110*(i-2),0,100,20);}
+      c.font = "20px Arial"; c.fillStyle = "#000000"; 
+      c.fillText("DI21",40,17);  
+    }
+//......................................updatedac25
+    function updatedac25(v) {
+      volts=v*3.3/255;
+      toStatus("Set DAC25 = " + v + " -> " + volts.toFixed(2) + " V");
+      websock.send(JSON.stringify({ "cmd" : "DAC25", "val" : v }));	
+    }  
+//..................................................
+    function rampdac25(v) {
+      toStatus("Ramp DAC25 with time step " + v);
+      websock.send(JSON.stringify({ "cmd" : "RAMP25", "val" : v }));
+    }
+//................................................
+    function setDO(v,s) {
+      vv=s?1:0;
+      toStatus("Status changed on DO"+ v + " is " + s + " or " + vv);
+      websock.send(JSON.stringify({ "cmd" : "DO"+v, "val" : + vv })); 
+    }
+//..................................................
+    function pulsepin18(v) {
+      toStatus("Pulse D18 with time step " + v + " ms");
+      websock.send(JSON.stringify({ "cmd" : "PULSE18", "val" : v }));
+    }
+//..................................................
+    function sendSpecialCommand(v) {
+      toStatus("Special Command " + v + " ");
+      websock.send(JSON.stringify({ "cmd" : "MMODE", "val" : v }));
+    }
+//.................
+    document.getElementById("displayarea").addEventListener('mousedown',showCoordinates, false);
+    function showCoordinates(event) {
+      rect=document.getElementById("displayarea").getBoundingClientRect();
+//      console.log(rect);
+      toStatus("Mouse position: " + (event.clientX-rect.left) + " " 
+              + (rect.height-event.clientY+rect.top));
+    }
+</SCRIPT>
+</BODY>
+</HTML>  

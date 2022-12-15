@@ -1,0 +1,26 @@
+# ./tempApp/Db/weather.db
+record(ai, "$(USER):T") {
+   field(DESC, "Temperature")
+   field(SCAN, "10 second")
+   field(DTYP, "stream")
+   field(INP, "@weather.proto get_T $(PORT)")
+}
+record(ai, "$(USER):P") {
+   field(DESC, "Pressure")
+   field(SCAN, "10 second")
+   field(DTYP, "stream")
+   field(INP, "@weather.proto get_P $(PORT)")
+}
+record(ai, "$(USER):H") {
+   field(DESC, "Humidity")
+   field(SCAN, "10 second")
+   field(DTYP, "stream")
+   field(INP, "@weather.proto get_H $(PORT)")
+}
+record(ai, "$(USER):VOC") {
+   field(DESC, "TemperatureHumidity")
+   field(SCAN, "10 second")
+   field(DTYP, "stream")
+   field(INP, "@weather.proto get_VOC $(PORT)")
+}
+

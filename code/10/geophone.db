@@ -1,0 +1,10 @@
+
+record(waveform, "$(USER):wf") {
+   field(DESC,"Geophone waveform")
+   field(DTYP,"stream")
+   field(SCAN,"10 second")
+   field(NELM,"1024")
+   field(FTVL,"FLOAT")
+   field(INP,"@geophone.proto get_wf $(PORT)")
+}
+

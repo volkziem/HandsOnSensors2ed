@@ -1,0 +1,28 @@
+record(bo,"raspi:trigger") {
+  field(DESC,"trigger PV")
+  field(ZNAM,"off")
+  field(ONAM,"on")
+}
+record(stringout,"raspi:message") {
+  field(DESC,"message on the RPi")
+  field(VAL,"RPi default message")
+}
+record(calc, "raspi:random") {
+  field(SCAN,"1 second")
+  field(CALC,"RNDM")
+}
+record(ao,"raspi:A") {
+  field(DESC,"variable A")
+  field(VAL,"0")
+}
+record(ao,"raspi:B") {
+  field(DESC,"variable B")
+  field(VAL,"0")
+}
+record(calc,"raspi:C") {
+  field(DESC,"sum of A and B")
+  field(SCAN,"1 second")
+  field(INPA,"raspi:A")
+  field(INPB,"raspi:B")
+  field(CALC,"A+B")
+}

@@ -1,0 +1,7 @@
+# ./tempApp/Db/weather.proto
+Terminator = CR LF;
+get_T {out "T?"; in  "T %f"; ExtraInput = Ignore; }
+get_P {out "P?"; in  "P %f"; ExtraInput = Ignore; }
+get_H {out "H?"; in  "H %f"; ExtraInput = Ignore; }
+get_VOC {out "VOC?"; in  "VOC %f"; ExtraInput = Ignore; }
+

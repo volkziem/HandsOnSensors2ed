@@ -1,0 +1,7 @@
+# ./tempApp/Db/temperature.db
+record(ai, "$(USER):temp") {
+   field(DESC, "Temperature")
+   field(SCAN, "10 second")
+   field(DTYP, "stream")
+   field(INP, "@temperature.proto get_temp $(PORT)")
+}
