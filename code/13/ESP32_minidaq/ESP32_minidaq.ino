@@ -14,7 +14,7 @@ volatile uint8_t websock_num=0,info_available=0,output_ready=0;
 int sample_period=100,samples[3];
 uint8_t dac25val=0,do18=0;
 char info_buffer[80];
-
+char out[300]; DynamicJsonDocument doc(300);
 //......................................................sampleslow_action
 void sampleslow_action() {
   samples[0]=analogRead(32)/8;
@@ -64,7 +64,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       DynamicJsonDocument root(300);
       deserializeJson(root,payload);
       const char *cmd = root["cmd"];
-      const int val = root["val"];
+      const long val = root["val"];
       if (strstr(cmd,"START")) { 
         sendMSG("INFO","ESP32: Received Start command");
         sample_period=val;
@@ -136,8 +136,7 @@ void loop() {
   }
   if (output_ready==1) {
     output_ready=0;
-    char out[300];
-    DynamicJsonDocument doc(300);
+    doc.to<JsonObject>();  // clear doc
     for (int k=0;k<3;k++) {doc["ADC"][k]=samples[k];}
     serializeJson(doc,out);
     webSocket.sendTXT(websock_num,out,strlen(out));

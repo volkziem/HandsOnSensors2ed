@@ -20,6 +20,7 @@ volatile uint8_t websock_num=0,info_available=0,output_ready=0;
 int mmode=0,sample_period=100,samples[3],icounter=0,recording=0;
 int ringbuf[50],ibuf=0,ped=0;  // pedestal subtraction for oximeter
 char info_buffer[80];          // for websock messages
+char out[300]; DynamicJsonDocument doc(300);
 float Rcal=10.0;               // calibration resistor
 uint16_t ecgtrace[200],ecg_counter=0;;
 #define CS D8                  // chip select for SPI-DAC
@@ -28,7 +29,7 @@ void handle_notfound() {  //.....................http server error handling
 }
 
 void cardio_action() {  //....................sampleslow_action
-  samples[0]=analogRead(0)/2;
+  samples[0]=analogRead(0)/2;  // adjust scale
   samples[1]=100*digitalRead(D3)+50*digitalRead(D4);
   samples[2]=0;
   output_ready=1; 
@@ -39,7 +40,7 @@ void oximeter_action() { //.........................oximeter_action
   } else if (mmode==4) {ir=(float)Sensor.getRed();}
   ringbuf[ibuf]=ir; ibuf++; if (ibuf>=50) {ibuf=0;} 
   ped=ringbuf[0]; for (int k=1;k<50;k++) {ped=min(ped,ringbuf[k]);}
-  samples[0]=100+(ir-ped)/4.0;
+  samples[0]=100+(ir-ped)/4.0;  // adjust scale
   icounter=icounter+1;
   if (icounter==200) {samples[1]=30000; icounter=0;} else {samples[1]=0;}
   samples[2]=0;
@@ -68,8 +69,6 @@ void ecg_action() {   //...............................ecg_action
   if (ecg_counter==200) {ecg_counter=0;} 
 }
 void send_samples(int samples[]) {  //................send_samples
-  char out[300];
-  DynamicJsonDocument doc(300);
   for (int k=0;k<3;k++) {doc["ADC"][k]=samples[k];}
   serializeJson(doc,out); webSocket.sendTXT(websock_num,out,strlen(out));
 }

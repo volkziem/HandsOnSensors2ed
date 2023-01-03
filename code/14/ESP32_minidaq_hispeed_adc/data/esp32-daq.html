@@ -18,6 +18,7 @@
     <button id="stop" type="button" onclick="stop();">Stop</button>
     <SELECT onchange="setSamplePeriod(this.value);">
       <OPTGROUP label="Roll mode">
+      <OPTION value="2">2 ms</OPTION>
       <OPTION value="5">5 ms</OPTION>
       <OPTION value="10">10 ms</OPTION>
       <OPTION value="20">20 ms</OPTION>
@@ -27,7 +28,38 @@
       <OPTION value="500">500 ms</OPTION>
       <OPTION value="1000">1 s</OPTION>
       <OPTION value="2000">2 s</OPTION>
-      <OPTION value="5000">5 s</OPTION>]
+      <OPTION value="5000">5 s</OPTION>
+      </OPTGROUP>
+      <OPTGROUP label="Hi-speed I2S ADC">
+      <OPTION value="-1000">1 kSamples/s</OPTION>     
+      <OPTION value="-2000">2 kSamples/s</OPTION>     
+      <OPTION value="-5000">5 kSamples/s</OPTION>     
+      <OPTION value="-10000">10 kSamples/s</OPTION>     
+      <OPTION value="-20000">20 kSamples/s</OPTION>     
+      <OPTION value="-50000">50 kSamples/s</OPTION>     
+      <OPTION value="-100000">100 kSamples/s</OPTION>     
+      <OPTION value="-200000">200 kSamples/s</OPTION>     
+      <OPTION value="-277777">277.777 kSamples/s</OPTION>
+      <OPTION value="-500000">500 kSamples/s</OPTION>     
+      <OPTION value="-1000000">1 MSamples/s</OPTION>
+      </OPTGROUP>
+    </SELECT>
+    <SELECT onchange="setDacFrequency(this.value);">
+      <OPTGROUP label="DAC frequency">
+	<OPTION value="0">DAC25 OFF</OPTION>  	
+	<OPTION value="2000">DAC25=2 kHz</OPTION>  	
+	<OPTION value="5000">DAC25=5 kHz</OPTION>  	
+	<OPTION value="10000">DAC25=10 kHz</OPTION>  	
+	<OPTION value="20000">DAC25=20 kHz</OPTION>  	
+	<OPTION value="50000">DAC25=50 kHz</OPTION>  	
+	<OPTION value="100000">DAC25=100 kHz</OPTION>  	
+	<OPTION value="200000">DAC25=200 kHz</OPTION>  	
+      </OPTGROUP>
+      <OPTGROUP label="DAC output scale">
+        <OPTION value="-1">1/1 scale</OPTION>  	
+        <OPTION value="-2">~1/2 scale</OPTION>  	
+        <OPTION value="-3">~1/4 scale</OPTION>  	
+        <OPTION value="-4">~1/6 scale</OPTION>  	
       </OPTGROUP>
     </SELECT>
     <button id="clear" type="button" onclick="cleardisplay();">Clear</button>
@@ -64,7 +96,7 @@ DAC25: <INPUT type="range" min="0" max="255" step="1" value="0" onchange="update
 </P>
 <DETAILS open>
   <SUMMARY>Logging display</SUMMARY>
-  <SVG id="displayarea" width="1024px" height="512px">
+  <SVG id="displayarea" width="1024px" height="514px">
     <PATH id="trace0" d="M0 256" />
     <PATH id="trace1" d="M0 256" />
   </SVG>
@@ -107,6 +139,23 @@ DAC25: <INPUT type="range" min="0" max="255" step="1" value="0" onchange="update
       var stuff=JSON.parse(event.data);
       var val=stuff["INFO"]; //..............................info
       if ( val != undefined ) {toReply(val);}
+      var val=stuff["WF0"];  //..........................waveform0
+      if ( val != undefined ) {
+        var d="M0 511";
+        for (i=0; i<val.length; i++) {d += ' L' + i + ' ' + (512-val[i]);} 
+	document.getElementById('trace0').setAttribute('d',d); 
+      }
+      var val=stuff["WF+0"];  //..........................waveform0
+      if ( val != undefined ) {
+        for (i=0; i<val.length; i++) {d += ' L' + i + ' ' + (512-val[i]);} 
+	document.getElementById('trace0').setAttribute('d',d); 
+      }
+      var val=stuff["WF1"];  //..........................waveform0
+      if ( val != undefined ) {
+        var d="M0 511";
+        for (i=0; i<val.length; i++) {d += ' L' + i + ' ' + (512-val[i]);} 
+	document.getElementById('trace1').setAttribute('d',d); 
+      }
       val=stuff["ADC"];      //..............................adc
       if ( val != undefined ) {
         document.getElementById('adc32val').innerHTML=
@@ -184,7 +233,21 @@ DAC25: <INPUT type="range" min="0" max="255" step="1" value="0" onchange="update
     function pulsepin18(v) {
       toStatus("Pulse D18 with time step " + v + " ms");
       websock.send(JSON.stringify({ "cmd" : "PULSE18", "val" : v }));
+}
+//....................................setSamplePeriod
+    function setDacFrequency(f) {
+      toStatus("Setting DAC25 frequency to "+ f + " Hz");
+      websock.send(JSON.stringify({ "cmd" : "SETDAC", "val" : f }));			
+    } 
+//.................
+    document.getElementById("displayarea").addEventListener('mousedown',showCoordinates, false);
+    function showCoordinates(event) {
+      rect=document.getElementById("displayarea").getBoundingClientRect();
+//      console.log(rect);
+      toStatus("Mouse position: " + (event.clientX-rect.left) + " " 
+              + (rect.height-event.clientY+rect.top));
     }
+
 </SCRIPT>
 </BODY>
 </HTML>  
