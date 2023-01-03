@@ -50,18 +50,16 @@ void i2sInit(uint32_t i2s_sample_rate){
   };
   Serial.printf("Attempting to setup I2S ADC with sampling frequency %d Hz\n", i2s_sample_rate);
   if(ESP_OK != i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL)){
-    Serial.printf("Error installing I2S. Halt!"); while(1);
+    Serial.printf("Error installing I2S.");
   }
   if(ESP_OK != i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_4)){    // pin 32
-    Serial.printf("Error setting up ADC. Halt!"); while(1);
+    Serial.printf("Error setting up ADC.");
   }
   if(ESP_OK != adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11)){
-    Serial.printf("Error setting up ADC attenuation. Halt!"); while(1);
+    Serial.printf("Error setting up ADC attenuation.");
   }
-
   if(ESP_OK != i2s_adc_enable(I2S_NUM_0)){
-    Serial.printf("Error enabling ADC. Halt!");
-    while(1);
+    Serial.printf("Error enabling ADC.");
   }
   Serial.printf("I2S ADC setup ok\n");
 }
