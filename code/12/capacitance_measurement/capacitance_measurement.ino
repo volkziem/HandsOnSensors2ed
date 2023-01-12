@@ -20,7 +20,7 @@ double linfit(int n, uint16_t y[]) {  //.........linfit
   double S1=0.5*n*(n+1);
   double S2=n*(n+1.0)*(2.0*n+1)/6.0;
   for (int k=0;k<n;k++) {
-     ay0+=k*log(y[k]);
+     ay0+=(k+1)*log(y[k]);
      ay1+=log(y[k]);
   }
   return (S0*ay0-S1*ay1)/(S2*S0-S1*S1);
