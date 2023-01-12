@@ -4,7 +4,7 @@ close all; clear all
 s=serialport('/dev/ttyACM0',9600);
 pause(2);
 flush(s);
-write(s,"CAP?");
+write(s,"CAP? 100");
 pause(1);
 reply=serialReadline(s); 
 capacitance=str2double(reply(4:end));
